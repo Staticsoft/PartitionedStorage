@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net60;netcoreapp3.1</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Staticsoft.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <Compile Include="..\Compatibility\IsExternalInit.cs" Link="IsExternalInit.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>Staticsoft.$(MSBuildProjectName)</PackageId>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Staticsoft/PartitionedStorage</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PartitionedStorage.Abstractions\PartitionedStorage.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
