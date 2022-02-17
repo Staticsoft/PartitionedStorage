@@ -2,16 +2,16 @@
 {
     public static class PartitionsExtensions
     {
-        public static Partition<TData> Get<TData>(this Partitions storage)
+        public static Partition<TData> Get<TData>(this Partitions partitions)
             where TData : new()
-            => storage.Get<TData>(typeof(TData).Name);
+            => partitions.Get<TData>(typeof(TData).Name);
 
-        public static PartitionFactory<TData> GetFactory<TData>(this Partitions storage)
+        public static PartitionFactory<TData> GetFactory<TData>(this Partitions partitions)
             where TData : new()
-            => storage.GetFactory<TData>(typeof(TData).Name);
+            => partitions.GetFactory<TData>(typeof(TData).Name);
 
-        public static PartitionFactory<TData> GetFactory<TData>(this Partitions storage, string partitionPrefix)
+        public static PartitionFactory<TData> GetFactory<TData>(this Partitions partitions, string partitionPrefix)
             where TData : new()
-            => new PartitionFactory<TData>(storage, partitionPrefix);
+            => new PartitionFactory<TData>(partitions, partitionPrefix);
     }
 }
