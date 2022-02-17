@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: All used AWS Services.
+Parameters:
+  PartitionedStoragePrefix:
+    Description: Prefix to use for PartitionedStorage DynamoDB table
+    Type: String
+Resources:
+  PartitionedStorageTestsStorage:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: PartitionKey
+        AttributeType: S
+      - AttributeName: SortKey
+        AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+      - AttributeName: PartitionKey
+        KeyType: HASH
+      - AttributeName: SortKey
+        KeyType: RANGE
+      TableName:
+        Fn::Sub: "${PartitionedStoragePrefix}PartitionedStorage"

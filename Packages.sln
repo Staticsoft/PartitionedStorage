@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.Abstractions", "PartitionedStorage.Abstractions\PartitionedStorage.Abstractions.csproj", "{8594B2D1-201A-4EDF-8CC6-D7FD0E5FA906}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.Memory", "PartitionedStorage.Memory\PartitionedStorage.Memory.csproj", "{8AFA10EF-B0DF-4649-8422-125BA01453E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.Files", "PartitionedStorage.Files\PartitionedStorage.Files.csproj", "{C69D49B2-9DED-4ABF-BA40-4C21F2F29692}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.Filters", "PartitionedStorage.Filters\PartitionedStorage.Filters.csproj", "{2DE98741-32CB-4342-B32C-2B32D67224A2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.AWS", "PartitionedStorage.AWS\PartitionedStorage.AWS.csproj", "{4A67AD30-0CDC-465B-A8BF-17DF06CAAA7D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8594B2D1-201A-4EDF-8CC6-D7FD0E5FA906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8594B2D1-201A-4EDF-8CC6-D7FD0E5FA906}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8594B2D1-201A-4EDF-8CC6-D7FD0E5FA906}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8594B2D1-201A-4EDF-8CC6-D7FD0E5FA906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AFA10EF-B0DF-4649-8422-125BA01453E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AFA10EF-B0DF-4649-8422-125BA01453E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AFA10EF-B0DF-4649-8422-125BA01453E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AFA10EF-B0DF-4649-8422-125BA01453E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C69D49B2-9DED-4ABF-BA40-4C21F2F29692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C69D49B2-9DED-4ABF-BA40-4C21F2F29692}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C69D49B2-9DED-4ABF-BA40-4C21F2F29692}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C69D49B2-9DED-4ABF-BA40-4C21F2F29692}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DE98741-32CB-4342-B32C-2B32D67224A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DE98741-32CB-4342-B32C-2B32D67224A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DE98741-32CB-4342-B32C-2B32D67224A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DE98741-32CB-4342-B32C-2B32D67224A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A67AD30-0CDC-465B-A8BF-17DF06CAAA7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A67AD30-0CDC-465B-A8BF-17DF06CAAA7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A67AD30-0CDC-465B-A8BF-17DF06CAAA7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A67AD30-0CDC-465B-A8BF-17DF06CAAA7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5A0EEE3C-5222-4F48-A715-62A5315699E5}
+	EndGlobalSection
+EndGlobal
