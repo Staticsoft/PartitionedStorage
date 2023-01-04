@@ -1,18 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net60;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net60</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Staticsoft.$(MSBuildProjectName)</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <Compile Include="..\Compatibility\IsExternalInit.cs" Link="IsExternalInit.cs" />
-  </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Staticsoft.Testing.Unit" Version="1.0.0-4" />
+    <PackageReference Include="Staticsoft.Testing.Unit" Version="1.0.0-6" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
