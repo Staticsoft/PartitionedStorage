@@ -15,11 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.Filters"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedStorage.AWS", "PartitionedStorage.AWS\PartitionedStorage.AWS.csproj", "{3BD3F0CB-B8B2-4A38-BB35-49B7BFF97010}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compatibility", "Compatibility", "{0A98D9D9-CD38-494F-86A2-94DFB8B9A802}"
-	ProjectSection(SolutionItems) = preProject
-		Compatibility\IsExternalInit.cs = Compatibility\IsExternalInit.cs
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
