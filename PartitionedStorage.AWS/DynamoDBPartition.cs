@@ -17,7 +17,7 @@ namespace Staticsoft.PartitionedStorage.AWS
         readonly DynamoDBContext Client;
         readonly string PartitionName;
 
-        const int MaxScanItems = 100;
+        const int MaxScanItems = 1000;
 
         public DynamoDBPartition(ItemSerializer serializer, DynamoDBContext client, string partitionName)
         {
