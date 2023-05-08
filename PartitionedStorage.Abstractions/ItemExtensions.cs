@@ -1,8 +1,7 @@
-﻿namespace Staticsoft.PartitionedStorage.Abstractions
+﻿namespace Staticsoft.PartitionedStorage.Abstractions;
+
+public static class ItemExtensions
 {
-    public static class ItemExtensions
-    {
-        public static bool HasVersion<TData>(this Item<TData> item)
-            => !string.IsNullOrEmpty(item.Version);
-    }
+    public static bool HasVersion<TData>(this Item<TData> item)
+        => !string.IsNullOrEmpty(item.Version);
 }

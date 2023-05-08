@@ -1,7 +1,6 @@
-﻿namespace Staticsoft.PartitionedStorage.Files
+﻿namespace Staticsoft.PartitionedStorage.Files;
+
+public interface FilePartitionedStorageOptions
 {
-    public interface FilePartitionedStorageOptions
-    {
-        string PartitionedStoragePath { get; }
-    }
+    string PartitionedStoragePath { get; }
 }

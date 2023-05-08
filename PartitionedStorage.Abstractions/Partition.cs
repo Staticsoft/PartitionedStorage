@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
 
-namespace Staticsoft.PartitionedStorage.Abstractions
+namespace Staticsoft.PartitionedStorage.Abstractions;
+
+public interface Partition<TData>
+    where TData : new()
 {
-    public interface Partition<TData>
-        where TData : new()
-    {
-        Task<Item<TData>> Get(string id);
+    Task<Item<TData>> Get(string id);
 
-        Task<string> Save(Item<TData> item);
+    Task<string> Save(Item<TData> item);
 
-        Task<Item<TData>[]> Scan(ScanOptions options);
+    Task<Item<TData>[]> Scan(ScanOptions options);
 
-        Task Remove(string id);
-    }
+    Task Remove(string id);
 }

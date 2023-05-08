@@ -1,8 +1,7 @@
-﻿namespace Staticsoft.PartitionedStorage.Abstractions
+﻿namespace Staticsoft.PartitionedStorage.Abstractions;
+
+public interface Partitions
 {
-    public interface Partitions
-    {
-        Partition<TData> Get<TData>(string partitionName)
-            where TData : new();
-    }
+    Partition<TData> Get<TData>(string partitionName)
+        where TData : new();
 }

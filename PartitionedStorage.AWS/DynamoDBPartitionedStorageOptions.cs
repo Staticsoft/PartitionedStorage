@@ -1,7 +1,6 @@
-﻿namespace Staticsoft.PartitionedStorage.AWS
+﻿namespace Staticsoft.PartitionedStorage.AWS;
+
+public class DynamoDBPartitionedStorageOptions
 {
-    public class DynamoDBPartitionedStorageOptions
-    {
-        public string TableNamePrefix { get; init; }
-    }
+    public string TableNamePrefix { get; init; }
 }
