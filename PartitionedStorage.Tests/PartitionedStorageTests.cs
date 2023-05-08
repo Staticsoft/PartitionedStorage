@@ -8,8 +8,7 @@ using Xunit;
 
 namespace Staticsoft.PartitionedStorage.Tests;
 
-public abstract class PartitionedStorageTests<TSPF> : TestBase<Partitions, TSPF>, IAsyncLifetime
-    where TSPF : ServiceProviderFactory, new()
+public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLifetime
 {
     const string NonExistingPartitionName = "NonExistingPartition";
     const string NonExistingItem = "NonExistingItem";

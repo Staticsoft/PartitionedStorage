@@ -3,14 +3,11 @@ using Amazon.DynamoDBv2;
 using Microsoft.Extensions.DependencyInjection;
 using Staticsoft.PartitionedStorage.Abstractions;
 using Staticsoft.PartitionedStorage.AWS;
-using Staticsoft.Testing;
 using System;
 
 namespace Staticsoft.PartitionedStorage.Tests;
 
-public class DynamoDBPartitionedStorageTests : PartitionedStorageTests<DynamoDBPartitionedStorageServices> { }
-
-public class DynamoDBPartitionedStorageServices : UnitServicesBase
+public class DynamoDBPartitionedStorageTests : PartitionedStorageTests
 {
     protected override IServiceCollection Services => base.Services
         .AddSingleton<Partitions, DynamoDBPartitions>()
