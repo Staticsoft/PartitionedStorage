@@ -1,16 +1,15 @@
 ﻿using Staticsoft.PartitionedStorage.Files;
 using System.IO;
 
-namespace Staticsoft.PartitionedStorage.Tests
+namespace Staticsoft.PartitionedStorage.Tests;
+
+public class TestFilePartitionedStorageOptions : FilePartitionedStorageOptions
 {
-    public class TestFilePartitionedStorageOptions : FilePartitionedStorageOptions
-    {
-        readonly string StoragePath;
+    readonly string StoragePath;
 
-        public TestFilePartitionedStorageOptions()
-            => StoragePath = Directory.CreateDirectory("PartitionedStorage").FullName;
+    public TestFilePartitionedStorageOptions()
+        => StoragePath = Directory.CreateDirectory("PartitionedStorage").FullName;
 
-        public string PartitionedStoragePath
-            => StoragePath;
-    }
+    public string PartitionedStoragePath
+        => StoragePath;
 }

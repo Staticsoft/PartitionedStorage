@@ -1,9 +1,8 @@
-﻿namespace Staticsoft.PartitionedStorage.Abstractions
-{
-    public interface ItemSerializer
-    {
-        string Serialize<T>(T item);
+﻿namespace Staticsoft.PartitionedStorage.Abstractions;
 
-        T Deserialize<T>(string serialized);
-    }
+public interface ItemSerializer
+{
+    string Serialize<T>(T item);
+
+    T Deserialize<T>(string serialized);
 }
