@@ -29,10 +29,11 @@ public class DynamoDBPartition<TData> : Partition<TData>
     public async Task<Item<TData>[]> Scan(ScanOptions options)
     {
         var filter = GetScanConditions(PartitionName, options);
-        var items = await Client.FromScanAsync<DynamoDBItem>(new ScanOperationConfig
+        var items = await Client.FromQueryAsync<DynamoDBItem>(new QueryOperationConfig
         {
             Limit = GetScanLimit(options),
-            Filter = filter
+            Filter = filter,
+            BackwardSearch = options.Order == ScanOrder.Descending
         }).GetNextSetAsync();
         return items.Select(ToItem).ToArray();
     }
@@ -66,7 +67,7 @@ public class DynamoDBPartition<TData> : Partition<TData>
     public Task Remove(string id)
         => Client.DeleteAsync<DynamoDBItem>(PartitionName, id, new DynamoDBOperationConfig { SkipVersionCheck = true });
 
-    static ScanFilter GetScanConditions(string partitionName, ScanOptions options)
+    static QueryFilter GetScanConditions(string partitionName, ScanOptions options)
     {
         var conditions = GetPartitionKeyFilter(partitionName);
         var additionalConditions = GetAdditionalConditions(options);
@@ -78,9 +79,9 @@ public class DynamoDBPartition<TData> : Partition<TData>
         return conditions;
     }
 
-    static ScanFilter GetPartitionKeyFilter(string partitionName)
+    static QueryFilter GetPartitionKeyFilter(string partitionName)
     {
-        var filter = new ScanFilter();
+        var filter = new QueryFilter();
         filter.AddCondition(nameof(DynamoDBItem.PartitionKey), new Condition
         {
             ComparisonOperator = ComparisonOperator.EQ,
