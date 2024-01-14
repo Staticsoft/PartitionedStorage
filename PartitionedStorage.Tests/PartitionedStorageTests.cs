@@ -188,6 +188,21 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
         }
     }
 
+    [Fact]
+    public async Task ScansItemsInBothDirections()
+    {
+        await Partition.Save(ItemName, Item);
+        await Partition.Save(AlternativeItemName, Item);
+
+        var scanAscending = new ScanOptions() { MaxItems = 1 };
+        var scannedAscending = await Partition.Scan(scanAscending);
+        Assert.Equal(AlternativeItemName, scannedAscending.Single().Id);
+
+        var scanDescending = new ScanOptions() { MaxItems = 1, Order = ScanOrder.Descending };
+        var scannedDescending = await Partition.Scan(scanDescending);
+        Assert.Equal(ItemName, scannedDescending.Single().Id);
+    }
+
     static async Task DeleteItemsFromPartition<T>(Partition<T> partition)
         where T : new()
     {

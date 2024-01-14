@@ -2,6 +2,7 @@
 using Staticsoft.PartitionedStorage.Filters;
 using System;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -23,7 +24,7 @@ public class MemoryPartition<TData> : Partition<TData>
     public Task<Item<TData>[]> Scan(ScanOptions options)
         => Task.FromResult(
             Items
-                .OrderBy(item => item.Key)
+                .Sort(options.Order, item => item.Key)
                 .Select(item => item.Value)
                 .ApplyFilters(item => item.Id, options)
                 .Select(ToItem)

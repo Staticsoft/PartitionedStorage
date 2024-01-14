@@ -32,7 +32,7 @@ public class FilePartition<TData> : Partition<TData>
         => Task.WhenAll(
             Folder
                 .GetFiles()
-                .OrderBy(file => file.Name)
+                .Sort(options.Order, file => file.Name)
                 .ApplyFilters(file => file.Name, options)
                 .Select(file => Get(file.Name))
                 .ToArray()
