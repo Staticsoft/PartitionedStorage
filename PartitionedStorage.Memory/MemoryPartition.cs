@@ -24,6 +24,7 @@ public class MemoryPartition<TData> : Partition<TData>
     public Task<Item<TData>[]> Scan(ScanOptions options)
         => Task.FromResult(
             Items
+                .ToArray()
                 .Sort(options.Order, item => item.Key)
                 .Select(item => item.Value)
                 .ApplyFilters(item => item.Id, options)
