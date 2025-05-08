@@ -203,6 +203,36 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
         Assert.Equal(ItemName, scannedDescending.Single().Id);
     }
 
+    [Fact]
+    public async Task HandlesConcurrentUpdates()
+    {
+        await Partition.Save(ItemName, Item);
+
+        var tasks = Enumerable.Range(0, 100).Select(async i =>
+        {
+            var saved = false;
+            while (!saved)
+            {
+                try
+                {
+                    var item = await Partition.Get(ItemName);
+                    var data = item.Data with
+                    {
+                        IntProperty = i
+                    };
+                    await Partition.Save(item.Id, data, item.Version);
+                    saved = true;
+                }
+                catch (PartitionedStorageItemVersionMismatchException)
+                {
+                    saved = false;
+                }
+            }
+        });
+
+        await Task.WhenAll(tasks);
+    }
+
     static async Task DeleteItemsFromPartition<T>(Partition<T> partition)
         where T : new()
     {
