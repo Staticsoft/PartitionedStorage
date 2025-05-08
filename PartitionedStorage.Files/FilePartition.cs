@@ -1,32 +1,33 @@
 ﻿using Staticsoft.PartitionedStorage.Abstractions;
 using Staticsoft.PartitionedStorage.Filters;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Staticsoft.PartitionedStorage.Files;
 
-public class FilePartition<TData> : Partition<TData>
+public class FilePartition<TData>(
+    ItemSerializer serializer,
+    string path
+) : Partition<TData>
     where TData : new()
 {
     const int _4KB = 4 * 1024;
 
-    readonly ItemSerializer Serializer;
-    readonly DirectoryInfo Folder;
+    readonly ItemSerializer Serializer = serializer;
+
+    readonly DirectoryInfo Folder = Directory.CreateDirectory(path);
+    readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = [];
     readonly Encoding Encoding = Encoding.UTF8;
 
     string DirectoryPath
         => Folder.FullName;
-
-    public FilePartition(ItemSerializer serializer, string path)
-    {
-        Serializer = serializer;
-        Folder = Directory.CreateDirectory(path);
-    }
 
     public Task<Item<TData>[]> Scan(ScanOptions options)
         => Task.WhenAll(
@@ -51,24 +52,40 @@ public class FilePartition<TData> : Partition<TData>
             : Save(item.Id, data);
     }
 
-    public Task Remove(string fileName)
+    public async Task Remove(string fileName)
     {
-        var path = Path.Combine(DirectoryPath, fileName);
-        if (File.Exists(path)) File.Delete(path);
+        await Lock(fileName);
 
-        return Task.CompletedTask;
+        try
+        {
+            var path = Path.Combine(DirectoryPath, fileName);
+            if (File.Exists(path)) File.Delete(path);
+        }
+        finally
+        {
+            Release(fileName);
+        }
     }
 
     async Task<Item<TData>> GetItem(string fileName)
     {
-        using var stream = new FileStream(GetFilePath(fileName), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        var bytes = await ReadFile(stream);
-        return new Item<TData>
+        await Lock(fileName);
+
+        try
         {
-            Id = fileName,
-            Data = Serializer.Deserialize<TData>(Encoding.GetString(bytes)),
-            Version = GetVersion(bytes)
-        };
+            using var stream = new FileStream(GetFilePath(fileName), FileMode.Open, FileAccess.Read, FileShare.None);
+            var bytes = await ReadFile(stream);
+            return new Item<TData>
+            {
+                Id = fileName,
+                Data = Serializer.Deserialize<TData>(Encoding.GetString(bytes)),
+                Version = GetVersion(bytes)
+            };
+        }
+        finally
+        {
+            Release(fileName);
+        }
     }
 
     Task<string> Save(string fileName, string data)
@@ -84,18 +101,36 @@ public class FilePartition<TData> : Partition<TData>
 
     async Task<string> CreateFile(string fileName, string value)
     {
-        using var stream = new FileStream(GetFilePath(fileName), FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
-        return await WriteFile(stream, value);
+        await Lock(fileName);
+
+        try
+        {
+            using var stream = new FileStream(GetFilePath(fileName), FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
+            return await WriteFile(stream, value);
+        }
+        finally
+        {
+            Release(fileName);
+        }
     }
 
     async Task<string> UpdateFile(string fileName, string value, string previousVersion)
     {
-        using var stream = new FileStream(GetFilePath(fileName), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        await Lock(fileName);
 
-        var version = await GetVersion(stream);
-        if (version != previousVersion) throw new PartitionedStorageItemVersionMismatchException(fileName, previousVersion);
+        try
+        {
+            using var stream = new FileStream(GetFilePath(fileName), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
-        return await WriteFile(stream, value);
+            var version = await GetVersion(stream);
+            if (version != previousVersion) throw new PartitionedStorageItemVersionMismatchException(fileName, previousVersion);
+
+            return await WriteFile(stream, value);
+        }
+        finally
+        {
+            Release(fileName);
+        }
     }
 
     async Task<string> WriteFile(FileStream stream, string value)
@@ -108,28 +143,16 @@ public class FilePartition<TData> : Partition<TData>
     static async Task WriteFile(FileStream stream, byte[] bytes)
     {
         stream.Seek(0, SeekOrigin.Begin);
-        foreach (var chunk in GetChunks(bytes))
-        {
-            await stream.WriteAsync(chunk.AsMemory(0, chunk.Length));
-        }
-        stream.SetLength(bytes.Length);
-    }
 
-    static IEnumerable<byte[]> GetChunks(byte[] bytes)
-    {
-        var position = 0;
-        while (position != bytes.Length)
-        {
-            var nextPosition = Math.Min(position + _4KB, bytes.Length);
-            yield return bytes[position..nextPosition];
-            position = nextPosition;
-        }
+        await stream.WriteAsync(bytes);
+
+        stream.SetLength(bytes.Length);
     }
 
     string GetFilePath(string fileName)
         => Path.Combine(DirectoryPath, fileName);
 
-    async Task<string> GetVersion(FileStream stream)
+    static async Task<string> GetVersion(FileStream stream)
     {
         var previousContents = await ReadFile(stream);
         return GetVersion(previousContents);
@@ -147,10 +170,19 @@ public class FilePartition<TData> : Partition<TData>
         return bytes.ToArray();
     }
 
-    string GetVersion(byte[] file)
+    static string GetVersion(byte[] file)
     {
         using var sha = SHA256.Create();
         var bytes = sha.ComputeHash(file);
         return string.Join(string.Empty, bytes.Select(b => b.ToString("x2")));
     }
+
+    Task Lock(string fileName)
+        => FileLock(fileName).WaitAsync();
+
+    void Release(string fileName)
+        => FileLock(fileName).Release();
+
+    SemaphoreSlim FileLock(string fileName)
+        => Locks.GetOrAdd(fileName, (_) => new SemaphoreSlim(initialCount: 1, maxCount: 1));
 }
