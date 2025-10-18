@@ -55,29 +55,22 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
         => Task.CompletedTask;
 
     [Fact]
-    public async Task CanNotGetItemFromNonExistingPartition()
+    public async Task ThrowsNotFoundExceptionWhenGettingItemFromNonExistingPartition()
     {
         await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => NonExistingPartition.Get(NonExistingItem));
     }
 
     [Fact]
-    public async Task CanNotGetNonExistingItem()
+    public async Task ThrowsNotFoundExceptionWhenGettingNonExistingItem()
     {
         await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(NonExistingItem));
     }
 
     [Fact]
-    public async Task CanNotGetItemFromDifferentPartition()
+    public async Task ReturnsEmptyArrayWhenScanningEmptyPartition()
     {
-        await AlternativePartition.Save(ItemName, Item);
-        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
-    }
-
-    [Fact]
-    public async Task CanNotGetItemUsingDifferentItemId()
-    {
-        await Partition.Save(AlternativeItemName, Item);
-        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
+        var items = await Partition.Scan();
+        Assert.Empty(items);
     }
 
     [Fact]
@@ -95,30 +88,40 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
     }
 
     [Fact]
-    public async Task CanNotCreateItemTwice()
+    public async Task ReturnsSingleItemWhenItemIsCreated()
     {
         await Partition.Save(ItemName, Item);
-        await Assert.ThrowsAsync<PartitionedStorageItemAlreadyExistsException>(() => Partition.Save(ItemName, Item));
+        var items = await Partition.Scan();
+        Assert.Single(items);
+        Assert.Equal(ItemName, items[0].Id);
     }
 
     [Fact]
-    public async Task CanNotUpdateItemUsingInvalidVersion()
+    public async Task ThrowsNotFoundExceptionWhenGettingItemFromDifferentPartition()
     {
-        var version = await Partition.Save(ItemName, Item);
-        await Assert.ThrowsAsync<PartitionedStorageItemVersionMismatchException>(() => Task.WhenAll(
-            Partition.Save(ItemName, EmptyItem, version),
-            Partition.Save(ItemName, EmptyItem, version))
-        );
+        await AlternativePartition.Save(ItemName, Item);
+        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
     }
 
     [Fact]
-    public async Task CanUpdateItem()
+    public async Task ThrowsNotFoundExceptionWhenGettingItemUsingDifferentItemId()
     {
-        var version = await Partition.Save(ItemName, Item);
-        var updated = Item with { StringProperty = "Updated!" };
-        await Partition.Save(ItemName, updated, version);
-        var item = await Partition.Get(ItemName);
-        Assert.Equal(updated, item.Data);
+        await Partition.Save(AlternativeItemName, Item);
+        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
+    }
+
+    [Fact]
+    public async Task CanDeleteNonExistingItem()
+    {
+        await Partition.Remove(ItemName);
+    }
+
+    [Fact]
+    public async Task CanDeleteItem()
+    {
+        await Partition.Save(ItemName, Item);
+        await Partition.Remove(ItemName);
+        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
     }
 
     [Fact]
@@ -140,48 +143,30 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
     }
 
     [Fact]
-    public async Task CanDeleteNonExistingItem()
-    {
-        await Partition.Remove(ItemName);
-    }
-
-    [Fact]
-    public async Task CanDeleteItem()
+    public async Task FiltersItemsByIdRange()
     {
         await Partition.Save(ItemName, Item);
-        await Partition.Remove(ItemName);
-        await Assert.ThrowsAsync<PartitionedStorageItemNotFoundException>(() => Partition.Get(ItemName));
-    }
-
-    [Fact]
-    public async Task CanFilterOutItemsByName()
-    {
-        var options = new ScanOptions[]
+        
+        var optionsFilterOut = new ScanOptions[]
         {
             new() { FromItem = "J", ToItem = "Z" },
             new() { FromItem = "J" },
             new() { FromItem = "A", ToItem = "I" },
             new() { ToItem = "I" }
         };
-        await Partition.Save(ItemName, Item);
-        foreach (var option in options)
+        foreach (var option in optionsFilterOut)
         {
             var items = await Partition.Scan(option);
             Assert.Empty(items);
         }
-    }
 
-    [Fact]
-    public async Task KeepsItemsWhichSatisfyFilters()
-    {
-        var options = new ScanOptions[]
+        var optionsKeep = new ScanOptions[]
         {
             new() { FromItem = "I", ToItem = "Z" },
             new() { FromItem = "I" },
             new() { ToItem = "Z" }
         };
-        await Partition.Save(ItemName, Item);
-        foreach (var option in options)
+        foreach (var option in optionsKeep)
         {
             var items = await Partition.Scan(option);
             Assert.Single(items);
@@ -189,7 +174,7 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
     }
 
     [Fact]
-    public async Task ScansItemsInBothDirections()
+    public async Task ScansItemsInAscendingOrder()
     {
         await Partition.Save(ItemName, Item);
         await Partition.Save(AlternativeItemName, Item);
@@ -197,10 +182,44 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
         var scanAscending = new ScanOptions() { MaxItems = 1 };
         var scannedAscending = await Partition.Scan(scanAscending);
         Assert.Equal(AlternativeItemName, scannedAscending.Single().Id);
+    }
+
+    [Fact]
+    public async Task ScansItemsInDescendingOrder()
+    {
+        await Partition.Save(ItemName, Item);
+        await Partition.Save(AlternativeItemName, Item);
 
         var scanDescending = new ScanOptions() { MaxItems = 1, Order = ScanOrder.Descending };
         var scannedDescending = await Partition.Scan(scanDescending);
         Assert.Equal(ItemName, scannedDescending.Single().Id);
+    }
+
+    [Fact]
+    public async Task ThrowsAlreadyExistsExceptionWhenCreatingItemTwice()
+    {
+        await Partition.Save(ItemName, Item);
+        await Assert.ThrowsAsync<PartitionedStorageItemAlreadyExistsException>(() => Partition.Save(ItemName, Item));
+    }
+
+    [Fact]
+    public async Task CanUpdateItem()
+    {
+        var version = await Partition.Save(ItemName, Item);
+        var updated = Item with { StringProperty = "Updated!" };
+        await Partition.Save(ItemName, updated, version);
+        var item = await Partition.Get(ItemName);
+        Assert.Equal(updated, item.Data);
+    }
+
+    [Fact]
+    public async Task ThrowsVersionMismatchExceptionWhenUpdatingWithInvalidVersion()
+    {
+        var version = await Partition.Save(ItemName, Item);
+        await Assert.ThrowsAsync<PartitionedStorageItemVersionMismatchException>(() => Task.WhenAll(
+            Partition.Save(ItemName, EmptyItem, version),
+            Partition.Save(ItemName, EmptyItem, version))
+        );
     }
 
     [Fact]
