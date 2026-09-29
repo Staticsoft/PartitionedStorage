@@ -113,6 +113,18 @@ public enum ScanOrder
 }
 ```
 
+**Scan semantics** (identical for every provider):
+- Item ids are compared and ordered **ordinally** (by character code, independent of the current culture), the same way DynamoDB orders sort keys. For example, `B` < `Item10` < `a` < `item3`.
+- The id range is inclusive at both ends: `FromItem` and `ToItem` are both returned when they exist. An empty string means "no bound".
+- An inverted range (`FromItem > ToItem`) returns an empty array.
+- `MaxItems` of 0 or less returns an empty array.
+
+**Versions** (identical for every provider):
+- Versions are opaque strings. Every successful save returns a new version, even when the data is unchanged.
+- An update succeeds only with the current version of an existing item. An update of a non-existing item, or one with any other version, throws `PartitionedStorageItemVersionMismatchException`. This includes a version the item had before it was removed and created again.
+
+**Consistency**: every read (`Get`, `Scan`) sees all completed writes.
+
 ## Providers
 
 ### Memory Implementation
@@ -177,7 +189,8 @@ services
 **Characteristics**:
 - Uses AWS DynamoDB for scalable cloud storage
 - Requires AWS credentials and region configuration
-- Supports all operations with DynamoDB's native versioning
+- Versions are GUIDs written with conditional puts, so they are never reused, even after an item is removed and created again (items written by earlier versions of the library keep their numeric versions until their next update)
+- Reads are strongly consistent
 - Configurable table name prefix for multi-tenant scenarios
 - Production-ready with automatic scaling
 
@@ -307,6 +320,42 @@ Test scenarios are ordered by increasing complexity, following the test ordering
 **When** I scan with MaxItems 1 and Order Descending  
 **Then** "Item" is returned first
 
+#### Scenario: Scan items in ordinal order
+**Given** I have saved items "a", "B", "Item10" and "item3"  
+**When** I scan the partition  
+**Then** the items are returned in the order "B", "Item10", "a", "item3"  
+**When** I scan with Order Descending  
+**Then** the items are returned in the order "item3", "a", "Item10", "B"
+
+#### Scenario: Filter items by ID range using ordinal order
+**Given** I have saved items "item3", "Item10" and "B"  
+**When** I scan with FromItem "a"  
+**Then** only "item3" is returned  
+**When** I scan with ToItem "a"  
+**Then** "B" and "Item10" are returned
+
+#### Scenario: ToItem is included in scan results
+**Given** I have saved items "A", "B" and "C"  
+**When** I scan with ToItem "B", or with FromItem "A" and ToItem "B"  
+**Then** "A" and "B" are returned  
+**When** I scan with FromItem "A", ToItem "B" and Order Descending  
+**Then** "B" and "A" are returned
+
+#### Scenario: Scan with FromItem equal to ToItem returns that item
+**Given** I have saved items "A" and "B"  
+**When** I scan with FromItem "A" and ToItem "A"  
+**Then** only "A" is returned
+
+#### Scenario: Scan with an inverted range returns empty array
+**Given** I have saved items "A" and "B"  
+**When** I scan with FromItem "B" and ToItem "A"  
+**Then** an empty array is returned
+
+#### Scenario: Scan with MaxItems 0 returns empty array
+**Given** I have saved an item  
+**When** I scan with MaxItems set to 0  
+**Then** an empty array is returned
+
 ### Level 6: Update Operations
 
 #### Scenario: Create item twice throws AlreadyExistsException
@@ -319,6 +368,26 @@ Test scenarios are ordered by increasing complexity, following the test ordering
 **When** I retrieve the item and update it with its current version  
 **Then** the update succeeds  
 **And** retrieving the item returns the updated data
+
+#### Scenario: Update returns new version even if data is the same
+**Given** I have saved an item  
+**When** I update it with its current version and the same data  
+**Then** the returned version differs from the previous one
+
+#### Scenario: Update non-existing item throws VersionMismatchException
+**Given** a partition exists  
+**When** I try to update an item that does not exist  
+**Then** a `PartitionedStorageItemVersionMismatchException` is thrown
+
+#### Scenario: Update with unknown version throws VersionMismatchException
+**Given** I have saved an item  
+**When** I try to update it with a version that was never returned, such as "unknown-version"  
+**Then** a `PartitionedStorageItemVersionMismatchException` is thrown
+
+#### Scenario: Update recreated item with stale version throws VersionMismatchException
+**Given** I have saved an item, removed it, and saved it again with the same data  
+**When** I try to update it with the version returned by the first save  
+**Then** a `PartitionedStorageItemVersionMismatchException` is thrown
 
 ### Level 7: Advanced Scenarios
 

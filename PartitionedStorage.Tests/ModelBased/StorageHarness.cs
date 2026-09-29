@@ -8,14 +8,9 @@ using System.Threading.Tasks;
 
 namespace Staticsoft.PartitionedStorage.Tests.ModelBased;
 
-/// <summary>
-/// Wraps a <see cref="Partitions"/> implementation so that it can be driven by model-based tests.
-/// Every operation records a normalized outcome (result or exception type) in <see cref="Log"/>,
-/// so that two harnesses can be compared regardless of how each implementation represents versions.
-/// </summary>
 public class StorageHarness(Partitions partitions, IReadOnlyCollection<string> partitionNames)
 {
-	public const string BogusVersion = "999999";
+	public static readonly string BogusVersion = $"{Guid.NewGuid()}";
 
 	static readonly JsonSerializerOptions DataFormat = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
@@ -33,10 +28,6 @@ public class StorageHarness(Partitions partitions, IReadOnlyCollection<string> p
 			return "Ok";
 		});
 
-	/// <param name="versionsBack">
-	/// Which previously observed version to send: 0 is the latest version returned by Save for this item,
-	/// 1 is the one before it, and so on. When there is no such version, <see cref="BogusVersion"/> is sent.
-	/// </param>
 	public Task Update(string partition, string id, TestItem data, int versionsBack)
 		=> Record($"Update({partition},{id},{versionsBack})", async () =>
 		{
@@ -106,8 +97,6 @@ public class StorageHarness(Partitions partitions, IReadOnlyCollection<string> p
 	string Describe(string partition, Item<TestItem>[] items)
 		=> $"[{string.Join(", ", items.Select(item => Describe(partition, item)))}]";
 
-	// Versions are opaque and implementation-specific, so they are described by their position
-	// in the history of versions returned by Save for this item (v0 = latest, v? = never returned by Save).
 	string Describe(string partition, Item<TestItem> item)
 	{
 		var versions = Versions(partition, item.Id);

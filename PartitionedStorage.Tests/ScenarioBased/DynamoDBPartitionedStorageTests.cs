@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Staticsoft.PartitionedStorage.Abstractions;
 using Staticsoft.PartitionedStorage.AWS;
 using System;
+using Xunit;
 
 namespace Staticsoft.PartitionedStorage.Tests.ScenarioBased;
 
+[Collection(nameof(DynamoDBPartitionedStorageTests))]
 public class DynamoDBPartitionedStorageTests : PartitionedStorageTests
 {
 	protected override IServiceCollection Services => base.Services

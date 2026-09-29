@@ -11,16 +11,15 @@ using Xunit.Abstractions;
 
 namespace Staticsoft.PartitionedStorage.Tests.ModelBased;
 
+[Collection(nameof(DynamoDBPartitionedStorageTests))]
 public class DynamoDBPartitionedStorageModelBasedTests(ITestOutputHelper output)
 	: PartitionedStorageModelBasedTests(output), IAsyncLifetime
 {
 	readonly AmazonDynamoDBClient Client = DynamoDBPartitionedStorageTests.CreateDynamoDBClient();
 	readonly ConcurrentBag<PrefixedPartitions> Created = [];
 
-	// Every operation is a network call, so far fewer sequences than for the local implementations.
-	protected override long Iterations => 100;
+	protected override long Iterations => 1000;
 
-	// Every generated sequence gets its own partitions in the shared table, so runs never share state.
 	protected override Partitions CreateActual()
 	{
 		var partitions = new PrefixedPartitions(
@@ -37,12 +36,12 @@ public class DynamoDBPartitionedStorageModelBasedTests(ITestOutputHelper output)
 	public async Task DisposeAsync()
 	{
 		var cleanup = Storage();
-		await Task.WhenAll(Created.SelectMany(partitions => partitions.UsedPartitionNames).Select(async name =>
+		var parallelism = new ParallelOptions { MaxDegreeOfParallelism = 8 };
+		await Parallel.ForEachAsync(Created.SelectMany(partitions => partitions.UsedPartitionNames), parallelism, async (name, _) =>
 		{
 			var partition = cleanup.Get<TestItem>(name);
-			var items = await partition.Scan();
-			await Task.WhenAll(items.Select(item => partition.Remove(item.Id)));
-		}));
+			foreach (var item in await partition.Scan()) await partition.Remove(item.Id);
+		});
 		Client.Dispose();
 	}
 

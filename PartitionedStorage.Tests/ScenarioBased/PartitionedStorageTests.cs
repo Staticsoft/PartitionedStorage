@@ -196,6 +196,74 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
 	}
 
 	[Fact]
+	public async Task ScansItemsInOrdinalOrder()
+	{
+		await Task.WhenAll(new[] { "a", "B", "Item10", "item3" }.Select(id => Partition.Save(id, Item)));
+
+		var ascending = await Partition.Scan();
+		Assert.Equal(["B", "Item10", "a", "item3"], ascending.Select(item => item.Id));
+
+		var descending = await Partition.Scan(new ScanOptions { Order = ScanOrder.Descending });
+		Assert.Equal(["item3", "a", "Item10", "B"], descending.Select(item => item.Id));
+	}
+
+	[Fact]
+	public async Task FiltersItemsByIdRangeUsingOrdinalOrder()
+	{
+		await Task.WhenAll(new[] { "item3", "Item10", "B" }.Select(id => Partition.Save(id, Item)));
+
+		var fromLowercase = await Partition.Scan(new ScanOptions { FromItem = "a" });
+		Assert.Equal(["item3"], fromLowercase.Select(item => item.Id));
+
+		var toLowercase = await Partition.Scan(new ScanOptions { ToItem = "a" });
+		Assert.Equal(["B", "Item10"], toLowercase.Select(item => item.Id));
+	}
+
+	[Fact]
+	public async Task IncludesToItemInScanResults()
+	{
+		await Task.WhenAll(new[] { "A", "B", "C" }.Select(id => Partition.Save(id, Item)));
+
+		var options = new ScanOptions[]
+		{
+			new() { ToItem = "B" },
+			new() { FromItem = "A", ToItem = "B" }
+		};
+		foreach (var option in options)
+		{
+			var items = await Partition.Scan(option);
+			Assert.Equal(["A", "B"], items.Select(item => item.Id));
+		}
+
+		var descending = await Partition.Scan(new ScanOptions { FromItem = "A", ToItem = "B", Order = ScanOrder.Descending });
+		Assert.Equal(["B", "A"], descending.Select(item => item.Id));
+	}
+
+	[Fact]
+	public async Task ReturnsSingleItemWhenFromItemEqualsToItem()
+	{
+		await Task.WhenAll(new[] { "A", "B" }.Select(id => Partition.Save(id, Item)));
+		var items = await Partition.Scan(new ScanOptions { FromItem = "A", ToItem = "A" });
+		Assert.Equal(["A"], items.Select(item => item.Id));
+	}
+
+	[Fact]
+	public async Task ReturnsEmptyArrayWhenScanningInvertedRange()
+	{
+		await Task.WhenAll(new[] { "A", "B" }.Select(id => Partition.Save(id, Item)));
+		var items = await Partition.Scan(new ScanOptions { FromItem = "B", ToItem = "A" });
+		Assert.Empty(items);
+	}
+
+	[Fact]
+	public async Task ReturnsEmptyArrayWhenMaxItemsIsZero()
+	{
+		await Partition.Save(ItemName, Item);
+		var items = await Partition.Scan(new ScanOptions { MaxItems = 0 });
+		Assert.Empty(items);
+	}
+
+	[Fact]
 	public async Task ThrowsAlreadyExistsExceptionWhenCreatingItemTwice()
 	{
 		await Partition.Save(ItemName, Item);
@@ -234,6 +302,23 @@ public abstract class PartitionedStorageTests : TestBase<Partitions>, IAsyncLife
 	public async Task ThrowsVersionMismatchExceptionWhenUpdatingNonExistentItem()
 	{
 		await Assert.ThrowsAsync<PartitionedStorageItemVersionMismatchException>(() => Partition.Save(ItemName, Item, "0"));
+	}
+
+	[Fact]
+	public async Task ThrowsVersionMismatchExceptionWhenUpdatingWithUnknownVersion()
+	{
+		await Partition.Save(ItemName, Item);
+		await Assert.ThrowsAsync<PartitionedStorageItemVersionMismatchException>(() => Partition.Save(ItemName, Item, "unknown-version"));
+	}
+
+	[Fact]
+	public async Task ThrowsVersionMismatchExceptionWhenUpdatingRecreatedItemWithStaleVersion()
+	{
+		var staleVersion = await Partition.Save(ItemName, Item);
+		await Partition.Remove(ItemName);
+		await Partition.Save(ItemName, Item);
+
+		await Assert.ThrowsAsync<PartitionedStorageItemVersionMismatchException>(() => Partition.Save(ItemName, Item, staleVersion));
 	}
 
 	[Fact]
