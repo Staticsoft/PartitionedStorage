@@ -16,12 +16,12 @@ public static class FilteringExtensions
     static IEnumerable<T> ApplyFromFilter<T>(this IEnumerable<T> entities, Func<T, string> nameResolver, string fromFilter)
         => string.IsNullOrEmpty(fromFilter)
         ? entities
-        : entities.Where(named => nameResolver(named).CompareTo(fromFilter) >= 0);
+        : entities.Where(named => string.CompareOrdinal(nameResolver(named), fromFilter) >= 0);
 
     static IEnumerable<T> ApplyToFilter<T>(this IEnumerable<T> entities, Func<T, string> nameResolver, string toFilter)
         => string.IsNullOrEmpty(toFilter)
         ? entities
-        : entities.Where(named => nameResolver(named).CompareTo(toFilter) < 0);
+        : entities.Where(named => string.CompareOrdinal(nameResolver(named), toFilter) <= 0);
 
     static IEnumerable<T> ApplyMaxItemsFilter<T>(this IEnumerable<T> files, int maxItems)
         => files.Take(maxItems);

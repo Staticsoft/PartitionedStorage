@@ -91,8 +91,10 @@ The implementation throws several specific exceptions:
 The `ScanOptions` class provides various filtering capabilities:
 
 - `MaxItems`: Limit the number of returned items
-- `FromItem`: Start scanning from this item ID
-- `ToItem`: Stop scanning at this item ID
+- `FromItem`: Start scanning from this item ID (inclusive)
+- `ToItem`: Stop scanning at this item ID (inclusive)
+
+Item IDs are compared ordinally (by character code, independent of culture), the same way for every provider.
 - `Order`: Specify scan direction (Ascending/Descending)
 
 Example:
